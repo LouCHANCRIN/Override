@@ -1,0 +1,12 @@
+When using gdb we can see that there is a call to scanf followed by a comparison with an int.
+   0x080484de <+74>:    call   0x80483d0 <__isoc99_scanf@plt>
+   0x080484e3 <+79>:    mov    0x1c(%esp),%eax
+   0x080484e7 <+83>:    cmp    $0x149c,%eax
+   0x080484ec <+88>:    jne    0x804850d <main+121>
+
+There is a jne that will launch a shell if the value given is 5276 ($0x149c)
+
+We just need to launch the binary and use the password 5276 to log in as level01.
+Once its done we can do
+$ cat /home/users/level01/.pass
+uSq2ehEGT6c9S24zbshexZQBXUGrncxn5sD5QfGL
