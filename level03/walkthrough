@@ -1,0 +1,68 @@
+There are 6 functions in this program
+    (gdb) info functions
+    0x080485f4  clear_stdin
+    0x08048617  get_unum
+    0x0804864f  prog_timeout
+    0x08048660  decrypt
+    0x08048747  test
+    0x0804885a  main
+
+The function main will take an argument using the scanf function.
+(gdb) disas main
+Dump of assembler code for function main:
+   ...
+   0x080488c1 <+103>:   call   0x8048530 <__isoc99_scanf@plt> -> take an argument
+   0x080488c6 <+108>:   mov    0x1c(%esp),%eax                -> Place the result in eax
+   0x080488ca <+112>:   movl   $0x1337d00d,0x4(%esp)
+   0x080488d2 <+120>:   mov    %eax,(%esp)
+   0x080488d5 <+123>:   call   0x8048747 <test>               -> Call to test
+   0x080488da <+128>:   mov    $0x0,%eax
+   0x080488df <+133>:   leave  
+   0x080488e0 <+134>:   ret    
+End of assembler dump.
+
+Then it call the function test which will substract the int value of our password to 322424845
+
+Dump of assembler code for function test:
+   ...
+   0x08048755 <+14>:    sub    %eax,%ecx
+
+   (gdb) b*0x08048755
+   (gdb) r
+   The program being debugged has been started already.
+   Start it from the beginning? (y or n) y
+   Starting program: /home/users/level03/level03 
+   ***********************************
+   *               level03         **
+   ***********************************
+   Password:1111111
+   (gdb) info registers
+   eax            0x10f447 1111111
+   ecx            0x1337d00d       322424845
+   ...
+
+The result will be passed to the decrypt function.
+
+In decrypt function, we can see that the string 'Q}|u`sfg~sf{}|a3' is hardcoded
+   0x08048673 <+19>:    movl   $0x757c7d51,-0x1d(%ebp)
+   0x0804867a <+26>:    movl   $0x67667360,-0x19(%ebp)
+   0x08048681 <+33>:    movl   $0x7b66737e,-0x15(%ebp)
+   0x08048688 <+40>:    movl   $0x33617c7d,-0x11(%ebp)
+
+It will then do a xor between each elements of the string and the result of 322424845 - password
+and compare it with the string "Congratulations". If the condition is valid, a shell will be launched
+   0x080486c5 <+101>:   jmp    0x80486e5 <decrypt+133>
+   0x080486c7 <+103>:   lea    eax,[ebp-0x1d]
+   0x080486ca <+106>:   add    eax,DWORD PTR [ebp-0x28]
+   0x080486cd <+109>:   movzx  eax,BYTE PTR [eax]
+   0x080486d0 <+112>:   mov    edx,eax
+   0x080486d2 <+114>:   mov    eax,DWORD PTR [ebp+0x8]
+   0x080486d5 <+117>:   xor    eax,edx
+   0x080486d7 <+119>:   mov    edx,eax
+   0x080486d9 <+121>:   lea    eax,[ebp-0x1d]
+   0x080486dc <+124>:   add    eax,DWORD PTR [ebp-0x28]
+   0x080486df <+127>:   mov    BYTE PTR [eax],dl
+   0x080486e1 <+129>:   add    DWORD PTR [ebp-0x28],0x1
+   0x080486e5 <+133>:   mov    eax,DWORD PTR [ebp-0x28]
+   0x080486e8 <+136>:   cmp    eax,DWORD PTR [ebp-0x24]
+   0x080486eb <+139>:   jb     0x80486c7 <decrypt+103>
