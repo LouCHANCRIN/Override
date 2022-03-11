@@ -29,8 +29,6 @@ Dump of assembler code for function test:
 
    (gdb) b*0x08048755
    (gdb) r
-   The program being debugged has been started already.
-   Start it from the beginning? (y or n) y
    Starting program: /home/users/level03/level03 
    ***********************************
    *               level03         **
@@ -50,19 +48,41 @@ In decrypt function, we can see that the string 'Q}|u`sfg~sf{}|a3' is hardcoded
    0x08048688 <+40>:    movl   $0x33617c7d,-0x11(%ebp)
 
 It will then do a xor between each elements of the string and the result of 322424845 - password
-and compare it with the string "Congratulations". If the condition is valid, a shell will be launched
    0x080486c5 <+101>:   jmp    0x80486e5 <decrypt+133>
    0x080486c7 <+103>:   lea    eax,[ebp-0x1d]
    0x080486ca <+106>:   add    eax,DWORD PTR [ebp-0x28]
    0x080486cd <+109>:   movzx  eax,BYTE PTR [eax]
    0x080486d0 <+112>:   mov    edx,eax
    0x080486d2 <+114>:   mov    eax,DWORD PTR [ebp+0x8]
-   0x080486d5 <+117>:   xor    eax,edx
+   0x080486d5 <+117>:   xor    eax,edx    	            -> xor eax (0x12) edx (element of the string)
    0x080486d7 <+119>:   mov    edx,eax
    0x080486d9 <+121>:   lea    eax,[ebp-0x1d]
-   0x080486dc <+124>:   add    eax,DWORD PTR [ebp-0x28]
+   0x080486dc <+124>:   add    eax,DWORD PTR [ebp-0x28]  -> Store the result
    0x080486df <+127>:   mov    BYTE PTR [eax],dl
    0x080486e1 <+129>:   add    DWORD PTR [ebp-0x28],0x1
    0x080486e5 <+133>:   mov    eax,DWORD PTR [ebp-0x28]
    0x080486e8 <+136>:   cmp    eax,DWORD PTR [ebp-0x24]
-   0x080486eb <+139>:   jb     0x80486c7 <decrypt+103>
+   0x080486eb <+139>:   jb     0x80486c7 <decrypt+103>   -> Stay in loop until end of iteration
+
+Then we will compare it with the string "Congratulations". If the condition is valid, a shell will be launched
+   0x080486ed <+141>:   lea    eax,[ebp-0x1d]
+   0x080486f0 <+144>:   mov    edx,eax          -> Place the decrypted string in edx
+   0x080486f2 <+146>:   mov    eax,0x80489c3    -> Place the 'Congratulations' string in eax
+   0x080486f7 <+151>:   mov    ecx,0x11
+   0x080486fc <+156>:   mov    esi,edx          -> Place the decrypted string in esi 
+   0x080486fe <+158>:   mov    edi,eax          -> Place the 'Congratulations' string in edi
+   0x08048700 <+160>:   repz cmps BYTE PTR ds:[esi],BYTE PTR es:[edi] -> Compare esi and edi
+
+To find the difference of xor between 'Q' (81) and 'C' (67), we will use python
+   python3
+   >>> 81 ^ 67
+   18
+
+So our password will be 322424845 - 18 = 322424827
+   level03@OverRide:~$ ./level03 
+   ***********************************
+   *               level03         **
+   ***********************************
+   Password:322424827
+   $ cat /home/users/level04/.pass
+   kgv3tkEb9h2mLkRsPkXRfc2mHbjMxQzvb2FrgKkf
